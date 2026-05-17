@@ -10,7 +10,7 @@ CHECK="${GREEN}✔${RESET}"
 ARROW="${PURPLE}❯${RESET}"
 
 DESKTOP=~/Desktop
-SCREENSHOTS_DIR=~/Screenshots
+SCREENSHOTS_DIR=~/Downloads/Screenshots
 
 echo ""
 echo -e "${PURPLE}  Screenshot Organiser${RESET}"
