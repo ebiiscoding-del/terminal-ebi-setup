@@ -1,13 +1,10 @@
-# TH3RMinal ⚡
-
-> *Where TH3ERV meets the terminal.*
-
 ```
    ______           ______ ______                  
   / ____/________ _/ __/ //_  __/__  _________ ___ 
  / /   / ___/ __ `/ /_/ __// / / _ \/ ___/ __ `__ \
 / /___/ /  / /_/ / __/ /_ / / /  __/ /  / / / / / /
 \____/_/   \__,_/_/  \__//_/  \___/_/  /_/ /_/ /_/
+
 ```
 
 A fully custom, opinionated macOS terminal setup built by [Ebinezar Dhanaraj](https://github.com/ebiiscoding-del) — powerline prompt with 10 cycling colors, automation scripts, AI tools, git helpers, and more. All in one install.
