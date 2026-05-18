@@ -8,10 +8,10 @@ if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]
   source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
 fi
 
-source /opt/homebrew/share/powerlevel10k/powerlevel10k.zsh-theme
+#source /opt/homebrew/share/powerlevel10k/powerlevel10k.zsh-theme
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
-[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+#[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
 # history setup
 HISTFILE=$HOME/.zhistory
@@ -94,3 +94,38 @@ alias 'git?'='gh copilot -p "git command to"'
 
 # ── httpie ──
 alias api="http"
+
+# ── Game Mode ──
+function gameon() {
+  echo "🎮 Starting Steam..."
+  open -a Steam
+  echo "✔ Steam launched! Have fun!"
+}
+
+function gameoff() {
+  echo "🎮 Shutting down game mode..."
+  launchctl remove com.valvesoftware.steam.ipctool 2>/dev/null
+  pkill -9 -f "Steam.AppBundle" 2>/dev/null
+  pkill -9 -f "ipcserver" 2>/dev/null
+  pkill -9 -f "wine" 2>/dev/null
+  pkill -9 -f "winedevice" 2>/dev/null
+  echo "✔ Steam and Wine killed! Your Mac is free!"
+  uptime
+}
+
+# ── Pomodoro ──
+alias pomo='bash ~/.pomodoro.sh'
+alias pomobreak='bash ~/.pomodoro.sh break'
+
+# ── Dev Environment ──
+alias devstart='bash ~/.devstart.sh'
+alias devstop='bash ~/.devstop.sh'
+
+# ── Git Helper ──
+alias gw='bash ~/.git_helper.sh'
+
+# ── List Applications ──
+alias apps="eza -TL 1 /Applications"
+
+# ── Custom colored path prompt ──
+source ~/.custom_prompt.zsh
