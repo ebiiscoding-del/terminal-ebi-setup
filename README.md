@@ -1,3 +1,11 @@
+# TH3RMinal ⚡
+
+> *Where TH3ERV meets the terminal.*
+
+A fully custom, opinionated macOS terminal setup built by [Ebinezar Dhanaraj](https://github.com/ebiiscoding-del) — powerline prompt with 10 cycling colors, automation scripts, AI tools, git helpers, and more. All in one install.
+
+---
+
 # terminal-ebi-setup 🖥️
 
 > Ebi's personal terminal setup for macOS — fast, beautiful, and on-brand.
@@ -191,3 +199,18 @@ source ~/.zshrc
 
 ## 📄 License
 MIT © [Ebinezar Dhanaraj](https://github.com/ebiiscoding-del)
+
+---
+
+## 🎨 TH3RMinal Identity
+
+```
+    ____                  ____  _____                  
+   / __ \_________ ______/ __ \/ ___/__  _________ ___ 
+  / / / / ___/ __ `/ ___/ / / /\__ \/ _ \/ ___/ __ `__ \
+ / /_/ / /  / /_/ / /  / /_/ /___/ /  __/ /  / / / / / /
+/_____/_/   \__,_/_/   \____//____/\___/_/  /_/ /_/ /_/ 
+```
+
+> *Where TH3ERV meets the terminal. Built different. Runs different.*
+
