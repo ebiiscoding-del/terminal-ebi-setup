@@ -1,3 +1,7 @@
+figlet -f slant "CraftTerm" | while IFS= read -r line; do
+  padding=$(( (COLUMNS - ${#line}) / 2 ))
+  printf "%${padding}s%s\n" "" "$line"
+done | lolcat --freq 0.2 --seed 40
 fastfetch
 
 typeset -g POWERLEVEL9K_INSTANT_PROMPT=quiet
@@ -129,3 +133,6 @@ alias apps="eza -TL 1 /Applications"
 
 # ── Custom colored path prompt ──
 source ~/.custom_prompt.zsh
+
+# ── Dashboard ──
+alias dash='bash ~/.dashboard.sh'
