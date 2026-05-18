@@ -1,17 +1,17 @@
-$1                          ..'          
-                      ,xNMM.           
-                    .OMMMMo            
-                    lMM"               
-          .;loddo:.  .olloddol;.       
-        cKMMMMMMMMMMNWMMMMMMMMMM0:     
-      .KMMMMMMMMMMMMMMMMMMMMMMMWd.        $2 _____   _   _   _____   _____   ____   __     __
-      XMMMMMMMMMMMMMMMMMMMMMMMX.          |_   _| | | | | |___ /  | ____| |  _ \  \ \   / /
-     ;MMMMMMMMMMMMMMMMMMMMMMMM:             | |   | |_| |   |_ \  |  _|   | |_) |  \ \ / /
-     :MMMMMMMMMMMMMMMMMMMMMMMM:             | |   |  _  |  ___) | | |___  |  _ <    \ V /
-     .MMMMMMMMMMMMMMMMMMMMMMMMX.            |_|   |_| |_| |____/  |_____| |_| \_\    \_/
-      kMMMMMMMMMMMMMMMMMMMMMMMMWd.     
-      'XMMMMMMMMMMMMMMMMMMMMMMMMMMk    
-       'XMMMMMMMMMMMMMMMMMMMMMMMMK.    
-         kMMMMMMMMMMMMMMMMMMMMMMd      
-          ;KMMMMMMMWXXWMMMMMMMk.       
-            "cooc*"    "*coo'"         
+                     ..'          
+                 ,xNMM.           
+               .OMMMMo            
+               lMM"               
+     .;loddo:.  .olloddol;.       
+   cKMMMMMMMMMMNWMMMMMMMMMM0:     
+ .KMMMMMMMMMMMMMMMMMMMMMMMWd.          ___                 __   _     _____
+ XMMMMMMMMMMMMMMMMMMMMMMMX.           / __|  _ _   __ _   / _| | |_  |_   _|  ___   _ _   _ __
+;MMMMMMMMMMMMMMMMMMMMMMMM:           | (__  | '_| / _` | |  _| |  _|   | |   / -_) | '_| | '  \
+:MMMMMMMMMMMMMMMMMMMMMMMM:            \___| |_|   \__,_| |_|    \__|   |_|   \___| |_|   |_|_|_|
+.MMMMMMMMMMMMMMMMMMMMMMMMX.       
+ kMMMMMMMMMMMMMMMMMMMMMMMMWd.     
+ 'XMMMMMMMMMMMMMMMMMMMMMMMMMMk    
+  'XMMMMMMMMMMMMMMMMMMMMMMMMK.    
+    kMMMMMMMMMMMMMMMMMMMMMMd      
+     ;KMMMMMMMWXXWMMMMMMMk.       
+       "cooc*"    "*coo'"         
