@@ -47,15 +47,53 @@ That's it! Everything is installed and configured automatically.
 | `organise_downloads.sh` | Sorts Downloads by file type | Daily 8:00AM |
 | `organise_screenshots.sh` | Moves screenshots to Downloads/Screenshots | Daily 8:05AM |
 | `backup_dotfiles.sh` | Backs up dotfiles to GitHub | Daily 8:10AM |
-| `pomodoro.sh` | 50min work / 10min break timer | Manual |
 
-### Manual script commands:
+---
+
+## ⌨️ Commands
+
+### Dev Workflow
 ```bash
-pomo          # Start 50 min focus session
-pomobreak     # Start 10 min break
-gameon        # Launch Steam
-gameoff       # Kill Steam + Wine
-??            # Ask GitHub Copilot for a command
+devstart          # Start Firebase + Zed + browser for current project
+devstart /path    # Start dev environment for specific project
+devstop           # Stop all dev services
+```
+
+### Git Workflow
+```bash
+gw                # Show git helper menu
+gw c              # Quick commit + push (asks for message)
+gw c "message"    # Quick commit with message
+gw s              # AI generates commit message 🤖
+gw b              # Branch helper (create/switch/delete)
+```
+
+### Game Mode
+```bash
+gameon            # Launch Steam
+gameoff           # Kill Steam + Wine (free up CPU/RAM)
+```
+
+### Pomodoro Timer
+```bash
+pomo              # Start 50 min focus session 🍅
+pomobreak         # Start 10 min break ☕
+```
+
+### Terminal Shortcuts
+```bash
+lg                # Open lazygit (visual git UI)
+??  "query"       # Ask GitHub Copilot for a command
+help <cmd>        # Simple readable docs (tldr)
+z <folder>        # Jump to any folder instantly
+cat <file>        # Syntax highlighted file viewer (bat)
+```
+
+### System
+```bash
+uptime            # Check CPU load averages
+btop              # Beautiful system monitor
+ncdu ~            # Visual disk usage explorer
 ```
 
 ---
@@ -64,12 +102,19 @@ gameoff       # Kill Steam + Wine
 
 ```
 terminal-ebi-setup/
-├── install.sh          # One-stop installer
-├── README.md           # This file
-├── dotfiles/           # Zsh, p10k, git configs
-├── fastfetch/          # Fastfetch config + TH3ERV logo
-├── scripts/            # Automation scripts
-└── launchd/            # launchd agents for automation
+├── install.sh              # One-stop installer
+├── README.md               # This file
+├── dotfiles/               # Zsh, p10k, git configs
+├── fastfetch/              # Fastfetch config + TH3ERV logo
+├── scripts/
+│   ├── organise_downloads.sh
+│   ├── organise_screenshots.sh
+│   ├── backup_dotfiles.sh
+│   ├── devstart.sh
+│   ├── devstop.sh
+│   ├── git_helper.sh
+│   └── pomodoro.sh
+└── launchd/                # launchd agents for automation
 ```
 
 ---
@@ -110,7 +155,7 @@ cp fastfetch/* ~/.config/fastfetch/
 ### 6. Install scripts
 ```bash
 cp scripts/*.sh ~/.
-chmod +x ~/.organise_downloads.sh ~/.organise_screenshots.sh ~/.backup_dotfiles.sh ~/.pomodoro.sh
+chmod +x ~/.organise_downloads.sh ~/.organise_screenshots.sh ~/.backup_dotfiles.sh ~/.pomodoro.sh ~/.devstart.sh ~/.devstop.sh ~/.git_helper.sh
 ```
 
 ### 7. Set up launchd
