@@ -10,15 +10,13 @@ cd terminal-ebi-setup
 bash install.sh
 ```
 
-That's it! Everything is installed and configured automatically.
-
 ---
 
 ## ✨ What's included
 
 | Tool | Purpose |
 |------|---------|
-| **Zsh + Powerlevel10k** | Shell + beautiful two-line prompt |
+| **Zsh + Custom Prompt** | 10-color powerline prompt with git info |
 | **fastfetch** | System info with custom TH3ERV logo on launch |
 | **coloreza** | Colored icons by file type with white filenames |
 | **zsh-autosuggestions** | Ghost text completions |
@@ -40,17 +38,12 @@ That's it! Everything is installed and configured automatically.
 
 ---
 
-## 🤖 Automation Scripts
-
-| Script | What it does | When |
-|--------|-------------|------|
-| `organise_downloads.sh` | Sorts Downloads by file type | Daily 8:00AM |
-| `organise_screenshots.sh` | Moves screenshots to Downloads/Screenshots | Daily 8:05AM |
-| `backup_dotfiles.sh` | Backs up dotfiles to GitHub | Daily 8:10AM |
-
----
-
 ## ⌨️ Commands
+
+### Dashboard
+```bash
+dash              # Open terminal dashboard with script status & quick actions
+```
 
 ### Dev Workflow
 ```bash
@@ -64,7 +57,7 @@ devstop           # Stop all dev services
 gw                # Show git helper menu
 gw c              # Quick commit + push (asks for message)
 gw c "message"    # Quick commit with message
-gw s              # AI generates commit message 🤖
+gw s              # AI generates commit message
 gw b              # Branch helper (create/switch/delete)
 ```
 
@@ -76,14 +69,14 @@ gameoff           # Kill Steam + Wine (free up CPU/RAM)
 
 ### Pomodoro Timer
 ```bash
-pomo              # Start 50 min focus session 🍅
-pomobreak         # Start 10 min break ☕
+pomo              # Start 50 min focus session
+pomobreak         # Start 10 min break
 ```
 
 ### Terminal Shortcuts
 ```bash
 lg                # Open lazygit (visual git UI)
-??  "query"       # Ask GitHub Copilot for a command
+?? "query"        # Ask GitHub Copilot for a command
 help <cmd>        # Simple readable docs (tldr)
 z <folder>        # Jump to any folder instantly
 cat <file>        # Syntax highlighted file viewer (bat)
@@ -98,18 +91,41 @@ ncdu ~            # Visual disk usage explorer
 
 ---
 
+## 🤖 Automation Scripts
+
+| Script | What it does | When | Log |
+|--------|-------------|------|-----|
+| `organise_downloads.sh` | Sorts Downloads by file type | Daily 8:00AM | `~/.logs/organise_downloads.log` |
+| `organise_screenshots.sh` | Moves screenshots to Downloads/Screenshots | Daily 8:05AM | `~/.logs/organise_screenshots.log` |
+| `backup_dotfiles.sh` | Backs up dotfiles to GitHub | Daily 8:10AM | `~/.logs/backup_dotfiles.log` |
+| `dashboard.sh` | Terminal dashboard | Manual (`dash`) | — |
+| `devstart.sh` | Start dev environment | Manual (`devstart`) | — |
+| `devstop.sh` | Stop dev services | Manual (`devstop`) | — |
+| `git_helper.sh` | Git workflow helper | Manual (`gw`) | — |
+| `pomodoro.sh` | Pomodoro timer | Manual (`pomo`) | — |
+
+### Check logs anytime:
+```bash
+cat ~/.logs/organise_downloads.log
+cat ~/.logs/organise_screenshots.log
+cat ~/.logs/backup_dotfiles.log
+```
+
+---
+
 ## 📁 Repo Structure
 
 ```
 terminal-ebi-setup/
 ├── install.sh              # One-stop installer
 ├── README.md               # This file
-├── dotfiles/               # Zsh, p10k, git configs
+├── dotfiles/               # Zsh, p10k, git configs + all scripts
 ├── fastfetch/              # Fastfetch config + TH3ERV logo
 ├── scripts/
 │   ├── organise_downloads.sh
 │   ├── organise_screenshots.sh
 │   ├── backup_dotfiles.sh
+│   ├── dashboard.sh
 │   ├── devstart.sh
 │   ├── devstop.sh
 │   ├── git_helper.sh
@@ -121,8 +137,6 @@ terminal-ebi-setup/
 
 ## 🔧 Manual Install
 
-If you prefer to install manually:
-
 ### 1. Install Homebrew
 ```bash
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
@@ -130,7 +144,7 @@ If you prefer to install manually:
 
 ### 2. Install packages
 ```bash
-brew install zsh eza zoxide fzf bat lazygit gh tldr fastfetch figlet lolcat btop git-delta onefetch ripgrep httpie zsh-autosuggestions zsh-syntax-highlighting powerlevel10k
+brew install zsh eza zoxide fzf bat lazygit gh tldr fastfetch figlet lolcat btop git-delta onefetch ripgrep httpie zsh-autosuggestions zsh-syntax-highlighting
 ```
 
 ### 3. Install coloreza
@@ -142,8 +156,8 @@ cd coloreza && bash install.sh
 ### 4. Copy dotfiles
 ```bash
 cp dotfiles/.zshrc ~/.zshrc
-cp dotfiles/.p10k.zsh ~/.p10k.zsh
 cp dotfiles/.gitconfig ~/.gitconfig
+cp dotfiles/.custom_prompt.zsh ~/.custom_prompt.zsh
 ```
 
 ### 5. Set up fastfetch
@@ -154,8 +168,10 @@ cp fastfetch/* ~/.config/fastfetch/
 
 ### 6. Install scripts
 ```bash
-cp scripts/*.sh ~/.
-chmod +x ~/.organise_downloads.sh ~/.organise_screenshots.sh ~/.backup_dotfiles.sh ~/.pomodoro.sh ~/.devstart.sh ~/.devstop.sh ~/.git_helper.sh
+for script in scripts/*.sh; do
+  cp "$script" ~/."$(basename $script)"
+  chmod +x ~/."$(basename $script)"
+done
 ```
 
 ### 7. Set up launchd
