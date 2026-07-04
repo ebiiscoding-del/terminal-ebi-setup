@@ -19,6 +19,7 @@ import subprocess
 import sys
 import threading
 import webbrowser
+from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse, parse_qs, unquote
 
@@ -26,11 +27,13 @@ IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".gif", ".heic", ".webp", ".bmp", ".tiff"
 VIDEO_EXTS = {".mov", ".mp4", ".m4v"}
 MEDIA_EXTS = IMAGE_EXTS | VIDEO_EXTS
 
-BASE_DIR = None  # set at startup, absolute realpath
+BASE_DIR = None      # organized Screenshots/YYYY/MM/DD/Type library, set at startup
+DESKTOP_DIR = None   # ~/Desktop, scanned directly for not-yet-synced items
+SYNC_SCRIPT = None   # path to organise_screenshots.sh, if present
 
 
-def build_index():
-    """Walk BASE_DIR and return a list of file metadata dicts."""
+def build_library_items():
+    """Walk BASE_DIR (the organized Screenshots/YYYY/MM/DD/Type tree)."""
     items = []
     for root, _dirs, files in os.walk(BASE_DIR):
         for name in files:
@@ -61,17 +64,77 @@ def build_index():
                 "kind": "video" if ext in VIDEO_EXTS else "image",
                 "mtime": mtime,
                 "size": size,
+                "source": "library",
             })
+    return items
+
+
+def build_desktop_items():
+    """Scan ~/Desktop directly (flat, non-recursive) for files matching the same
+    criteria organise_screenshots.sh uses, so not-yet-synced items still show up."""
+    items = []
+    if not DESKTOP_DIR or not os.path.isdir(DESKTOP_DIR):
+        return items
+    for name in os.listdir(DESKTOP_DIR):
+        full = os.path.join(DESKTOP_DIR, name)
+        if not os.path.isfile(full):
+            continue
+        ext = os.path.splitext(name)[1].lower()
+        is_screenshot_name = name.startswith("Screen Shot") or name.startswith("Screenshot")
+        is_recording_ext = ext in {".mov", ".mp4"}
+        if is_screenshot_name:
+            type_ = "Screenshots"
+        elif is_recording_ext:
+            type_ = "Recordings"
+        else:
+            continue
+        if ext not in MEDIA_EXTS:
+            continue
+        try:
+            stat = os.stat(full)
+            mtime = stat.st_mtime
+            size = stat.st_size
+        except OSError:
+            mtime = 0
+            size = 0
+        dt = datetime.fromtimestamp(mtime) if mtime else None
+        items.append({
+            "rel": name,
+            "filename": name,
+            "year": dt.strftime("%Y") if dt else "",
+            "month": dt.strftime("%m") if dt else "",
+            "day": dt.strftime("%d") if dt else "",
+            "type": type_,
+            "kind": "video" if ext in VIDEO_EXTS else "image",
+            "mtime": mtime,
+            "size": size,
+            "source": "desktop",
+        })
+    return items
+
+
+def build_index():
+    """Combine library + desktop items, newest first."""
+    items = build_library_items() + build_desktop_items()
     items.sort(key=lambda x: x["mtime"], reverse=True)
     return items
 
 
-def safe_abspath(rel):
-    """Resolve a relative path safely inside BASE_DIR, raising ValueError if it escapes."""
+def safe_abspath(source, rel):
+    """Resolve a relative path safely inside the given source's root directory,
+    raising ValueError if it escapes that root or the source is unrecognized."""
     rel = unquote(rel)
-    candidate = os.path.realpath(os.path.join(BASE_DIR, rel))
-    base = os.path.realpath(BASE_DIR)
-    if candidate != base and not candidate.startswith(base + os.sep):
+    if source == "desktop":
+        root = DESKTOP_DIR
+    elif source == "library":
+        root = BASE_DIR
+    else:
+        raise ValueError("Unknown source")
+    if not root:
+        raise ValueError("Source root not configured")
+    candidate = os.path.realpath(os.path.join(root, rel))
+    root_real = os.path.realpath(root)
+    if candidate != root_real and not candidate.startswith(root_real + os.sep):
         raise ValueError("Path escapes base directory")
     if not os.path.isfile(candidate):
         raise ValueError("Not a file")
@@ -246,6 +309,23 @@ PAGE_HTML = """<!DOCTYPE html>
     pointer-events: none;
   }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  #syncBtn {
+    background: var(--panel);
+    border: 1px solid var(--accent2);
+    color: var(--accent2);
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  #syncBtn:hover { background: rgba(95,179,240,0.12); }
+  #syncBtn:disabled { opacity: 0.5; cursor: default; }
+  .badge.unsynced {
+    background: rgba(240, 165, 60, 0.18);
+    color: #f0a53c;
+  }
+  .card.unsynced { border-color: rgba(240,165,60,0.4); }
 </style>
 </head>
 <body>
@@ -259,7 +339,13 @@ PAGE_HTML = """<!DOCTYPE html>
     <option value="Screenshots">Screenshots</option>
     <option value="Recordings">Recordings</option>
   </select>
+  <select id="fSource">
+    <option value="">All items</option>
+    <option value="library">Synced only</option>
+    <option value="desktop">Unsynced (Desktop) only</option>
+  </select>
   <input type="text" id="fSearch" placeholder="Search filename...">
+  <button id="syncBtn" title="Run organise_screenshots.sh now">&#8635; Sync Desktop Now</button>
   <span class="count" id="count"></span>
 </header>
 
@@ -309,6 +395,10 @@ function populateFilters() {
   const months = [...new Set(ALL_ITEMS.map(i => i.month))].filter(Boolean).sort();
   const ySel = document.getElementById('fYear');
   const mSel = document.getElementById('fMonth');
+  const prevYear = ySel.value;
+  const prevMonth = mSel.value;
+  ySel.innerHTML = '<option value="">All years</option>';
+  mSel.innerHTML = '<option value="">All months</option>';
   years.forEach(y => {
     const opt = document.createElement('option');
     opt.value = y; opt.textContent = y;
@@ -319,6 +409,8 @@ function populateFilters() {
     opt.value = m; opt.textContent = m;
     mSel.appendChild(opt);
   });
+  ySel.value = years.includes(prevYear) ? prevYear : '';
+  mSel.value = months.includes(prevMonth) ? prevMonth : '';
 }
 
 function currentFilters() {
@@ -326,6 +418,7 @@ function currentFilters() {
     year: document.getElementById('fYear').value,
     month: document.getElementById('fMonth').value,
     type: document.getElementById('fType').value,
+    source: document.getElementById('fSource').value,
     search: document.getElementById('fSearch').value.trim().toLowerCase(),
   };
 }
@@ -336,6 +429,7 @@ function render() {
     if (f.year && i.year !== f.year) return false;
     if (f.month && i.month !== f.month) return false;
     if (f.type && i.type !== f.type) return false;
+    if (f.source && i.source !== f.source) return false;
     if (f.search && !i.filename.toLowerCase().includes(f.search)) return false;
     return true;
   });
@@ -354,27 +448,37 @@ function render() {
     thumbWrap.className = 'thumb-wrap';
     if (item.kind === 'video') {
       const v = document.createElement('video');
-      v.src = '/media?path=' + encodeURIComponent(item.rel);
+      v.src = mediaUrl(item);
       v.preload = 'metadata';
       v.muted = true;
       thumbWrap.appendChild(v);
     } else {
       const img = document.createElement('img');
-      img.src = '/media?path=' + encodeURIComponent(item.rel);
+      img.src = mediaUrl(item);
       img.loading = 'lazy';
       thumbWrap.appendChild(img);
     }
     card.appendChild(thumbWrap);
 
+    if (item.source === 'desktop') {
+      card.classList.add('unsynced');
+    }
+
     const meta = document.createElement('div');
     meta.className = 'meta';
     const date = [item.year, item.month, item.day].filter(Boolean).join('-');
+    const badgeClass = item.source === 'desktop' ? 'badge unsynced' : 'badge';
+    const badgeLabel = item.source === 'desktop' ? 'Unsynced' : (item.type || 'Unsorted');
     meta.innerHTML = '<span class="fname">' + item.filename + '</span>' +
-      '<span class="badge">' + (item.type || 'Unsorted') + '</span>' + date;
+      '<span class="' + badgeClass + '">' + badgeLabel + '</span>' + date;
     card.appendChild(meta);
 
     grid.appendChild(card);
   });
+}
+
+function mediaUrl(item) {
+  return '/media?path=' + encodeURIComponent(item.rel) + '&source=' + encodeURIComponent(item.source);
 }
 
 function openOverlay(item) {
@@ -383,28 +487,29 @@ function openOverlay(item) {
   holder.innerHTML = '';
   if (item.kind === 'video') {
     const v = document.createElement('video');
-    v.src = '/media?path=' + encodeURIComponent(item.rel);
+    v.src = mediaUrl(item);
     v.controls = true;
     v.autoplay = false;
     v.className = 'preview';
     holder.appendChild(v);
   } else {
     const img = document.createElement('img');
-    img.src = '/media?path=' + encodeURIComponent(item.rel);
+    img.src = mediaUrl(item);
     img.className = 'preview';
     holder.appendChild(img);
   }
   document.getElementById('infoName').textContent = item.filename;
+  const locLabel = item.source === 'desktop' ? 'Desktop (not yet synced)' : 'Library';
   document.getElementById('infoMeta').textContent =
-    [item.year, item.month, item.day, item.type].filter(Boolean).join(' / ') + '  ·  ' + fmtSize(item.size);
+    [item.year, item.month, item.day, item.type].filter(Boolean).join(' / ') + '  ·  ' + fmtSize(item.size) + '  ·  ' + locLabel;
 
   const actions = document.getElementById('actionRow');
   actions.innerHTML = '';
-  actions.appendChild(makeBtn('Open', () => postAction('/api/open', item.rel), true));
-  actions.appendChild(makeBtn('Reveal in Finder', () => postAction('/api/reveal', item.rel)));
-  actions.appendChild(makeBtn('Copy Path', () => copyPath(item.rel)));
+  actions.appendChild(makeBtn('Open', () => postAction('/api/open', item), true));
+  actions.appendChild(makeBtn('Reveal in Finder', () => postAction('/api/reveal', item)));
+  actions.appendChild(makeBtn('Copy Path', () => copyPath(item)));
   if (item.kind === 'image') {
-    actions.appendChild(makeBtn('Copy Image', () => postAction('/api/copy-image', item.rel)));
+    actions.appendChild(makeBtn('Copy Image', () => postAction('/api/copy-image', item)));
   }
 
   document.getElementById('overlay').classList.add('active');
@@ -418,12 +523,12 @@ function makeBtn(label, fn, primary) {
   return b;
 }
 
-async function postAction(url, rel) {
+async function postAction(url, item) {
   try {
     const res = await fetch(url, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({path: rel})
+      body: JSON.stringify({path: item.rel, source: item.source})
     });
     const data = await res.json();
     if (data.ok) {
@@ -436,8 +541,8 @@ async function postAction(url, rel) {
   }
 }
 
-function copyPath(rel) {
-  fetch('/api/abspath?path=' + encodeURIComponent(rel))
+function copyPath(item) {
+  fetch('/api/abspath?path=' + encodeURIComponent(item.rel) + '&source=' + encodeURIComponent(item.source))
     .then(r => r.json())
     .then(data => {
       navigator.clipboard.writeText(data.abspath).then(() => {
@@ -463,7 +568,28 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
-['fYear','fMonth','fType'].forEach(id => document.getElementById(id).addEventListener('change', render));
+document.getElementById('syncBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('syncBtn');
+  btn.disabled = true;
+  btn.textContent = 'Syncing...';
+  try {
+    const res = await fetch('/api/sync-desktop', { method: 'POST' });
+    const data = await res.json();
+    if (data.ok) {
+      showToast(data.message || 'Synced');
+      await loadItems();
+    } else {
+      showToast('Error: ' + (data.error || 'sync failed'));
+    }
+  } catch (e) {
+    showToast('Sync request failed');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '\u21bb Sync Desktop Now';
+  }
+});
+
+['fYear','fMonth','fType','fSource'].forEach(id => document.getElementById(id).addEventListener('change', render));
 document.getElementById('fSearch').addEventListener('input', render);
 
 loadItems();
@@ -499,16 +625,18 @@ class Handler(BaseHTTPRequestHandler):
         elif parsed.path == "/api/abspath":
             qs = parse_qs(parsed.query)
             rel = qs.get("path", [""])[0]
+            source = qs.get("source", ["library"])[0]
             try:
-                abspath = safe_abspath(rel)
+                abspath = safe_abspath(source, rel)
                 self._send_json({"abspath": abspath})
             except ValueError:
                 self._send_json({"error": "invalid path"}, 400)
         elif parsed.path == "/media":
             qs = parse_qs(parsed.query)
             rel = qs.get("path", [""])[0]
+            source = qs.get("source", ["library"])[0]
             try:
-                abspath = safe_abspath(rel)
+                abspath = safe_abspath(source, rel)
             except ValueError:
                 self.send_response(404)
                 self.end_headers()
@@ -538,10 +666,26 @@ class Handler(BaseHTTPRequestHandler):
             payload = json.loads(raw or b"{}")
         except json.JSONDecodeError:
             payload = {}
+
+        if parsed.path == "/api/sync-desktop":
+            if not SYNC_SCRIPT or not os.path.isfile(SYNC_SCRIPT):
+                self._send_json({"ok": False, "error": "organise_screenshots.sh not found"}, 404)
+                return
+            try:
+                result = subprocess.run(
+                    ["bash", SYNC_SCRIPT], capture_output=True, text=True, timeout=60
+                )
+                tail = "\n".join(result.stdout.strip().splitlines()[-1:]) or "Sync complete"
+                self._send_json({"ok": True, "message": tail})
+            except Exception as e:
+                self._send_json({"ok": False, "error": f"sync failed: {e}"}, 500)
+            return
+
         rel = payload.get("path", "")
+        source = payload.get("source", "library")
 
         try:
-            abspath = safe_abspath(rel)
+            abspath = safe_abspath(source, rel)
         except ValueError:
             self._send_json({"ok": False, "error": "invalid path"}, 400)
             return
@@ -573,10 +717,23 @@ class Handler(BaseHTTPRequestHandler):
             self._send_json({"ok": False, "error": "unknown action"}, 404)
 
 
+class QuietThreadingHTTPServer(ThreadingHTTPServer):
+    """Suppresses the noisy-but-harmless traceback that fires when a browser
+    cancels a request mid-response (closed tab, cancelled thumbnail fetch, etc.)."""
+
+    def handle_error(self, request, client_address):
+        exc_type, exc_value, _ = sys.exc_info()
+        if isinstance(exc_value, (BrokenPipeError, ConnectionResetError)):
+            return
+        super().handle_error(request, client_address)
+
+
 def main():
-    global BASE_DIR
+    global BASE_DIR, DESKTOP_DIR, SYNC_SCRIPT
     parser = argparse.ArgumentParser()
     parser.add_argument("--dir", default=os.path.expanduser("~/Downloads/Screenshots"))
+    parser.add_argument("--desktop-dir", default=os.path.expanduser("~/Desktop"))
+    parser.add_argument("--sync-script", default=os.path.expanduser("~/.organise_screenshots.sh"))
     parser.add_argument("--port", type=int, default=5050)
     parser.add_argument("--no-browser", action="store_true")
     args = parser.parse_args()
@@ -586,7 +743,17 @@ def main():
         print(f"Directory not found: {BASE_DIR}")
         sys.exit(1)
 
-    server = ThreadingHTTPServer(("127.0.0.1", args.port), Handler)
+    DESKTOP_DIR = os.path.realpath(os.path.expanduser(args.desktop_dir))
+    if not os.path.isdir(DESKTOP_DIR):
+        print(f"Warning: Desktop dir not found, skipping: {DESKTOP_DIR}")
+        DESKTOP_DIR = None
+
+    SYNC_SCRIPT = os.path.realpath(os.path.expanduser(args.sync_script))
+    if not os.path.isfile(SYNC_SCRIPT):
+        print(f"Warning: sync script not found, Sync Now button will be disabled: {SYNC_SCRIPT}")
+        SYNC_SCRIPT = None
+
+    server = QuietThreadingHTTPServer(("127.0.0.1", args.port), Handler)
     url = f"http://127.0.0.1:{args.port}"
     print(f"Serving gallery for {BASE_DIR}")
     print(f"Open: {url}")
