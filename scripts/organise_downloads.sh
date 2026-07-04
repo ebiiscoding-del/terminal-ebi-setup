@@ -4,8 +4,10 @@ GREEN='\033[38;5;114m'
 BLUE='\033[38;5;39m'
 PURPLE='\033[38;5;141m'
 GRAY='\033[38;5;242m'
+RED='\033[38;5;196m'
 RESET='\033[0m'
 CHECK="${GREEN}✔${RESET}"
+CROSS="${RED}✘${RESET}"
 ARROW="${PURPLE}❯${RESET}"
 
 DOWNLOADS=~/Downloads
@@ -37,6 +39,7 @@ mkdir -p "$DOWNLOADS/Other"
 
 moved=0
 skipped=0
+failed=0
 
 for file in "$DOWNLOADS"/*; do
   [ -d "$file" ] && continue
@@ -47,25 +50,35 @@ for file in "$DOWNLOADS"/*; do
   for folder in "${!FOLDERS[@]}"; do
     for e in ${FOLDERS[$folder]}; do
       if [ "$ext" = "$e" ]; then
-        mv "$file" "$DOWNLOADS/$folder/$filename" 2>/dev/null
-        echo -e "  ${CHECK} ${GREEN}$filename${RESET} ${GRAY}→${RESET} ${BLUE}$folder/${RESET}"
-        echo "  ✔ $filename → $folder/" >> $LOG_FILE
-        ((moved++))
+        if mv "$file" "$DOWNLOADS/$folder/$filename" 2>>"$LOG_FILE"; then
+          echo -e "  ${CHECK} ${GREEN}$filename${RESET} ${GRAY}→${RESET} ${BLUE}$folder/${RESET}"
+          echo "  ✔ $filename → $folder/" >> $LOG_FILE
+          ((moved++))
+        else
+          echo -e "  ${CROSS} ${RED}$filename${RESET} ${GRAY}failed to move to $folder/${RESET}"
+          echo "  ✘ $filename failed to move to $folder/" >> $LOG_FILE
+          ((failed++))
+        fi
         moved_flag=true
         break 2
       fi
     done
   done
   if [ "$moved_flag" = false ]; then
-    mv "$file" "$DOWNLOADS/Other/$filename" 2>/dev/null
-    echo -e "  ${ARROW} ${GRAY}$filename → Other/${RESET}"
-    echo "  → $filename → Other/" >> $LOG_FILE
-    ((skipped++))
+    if mv "$file" "$DOWNLOADS/Other/$filename" 2>>"$LOG_FILE"; then
+      echo -e "  ${ARROW} ${GRAY}$filename → Other/${RESET}"
+      echo "  → $filename → Other/" >> $LOG_FILE
+      ((skipped++))
+    else
+      echo -e "  ${CROSS} ${RED}$filename${RESET} ${GRAY}failed to move to Other/${RESET}"
+      echo "  ✘ $filename failed to move to Other/" >> $LOG_FILE
+      ((failed++))
+    fi
   fi
 done
 
 echo ""
 echo -e "${GRAY}  ────────────────────────────────────${RESET}"
-echo -e "  ${CHECK} ${GREEN}Done!${RESET} Moved ${BLUE}$moved${RESET} files, ${GRAY}$skipped${RESET} to Other/"
-echo "Done: moved $moved files, $skipped to Other/" >> $LOG_FILE
+echo -e "  ${CHECK} ${GREEN}Done!${RESET} Moved ${BLUE}$moved${RESET} files, ${GRAY}$skipped${RESET} to Other/, ${RED}$failed${RESET} failed"
+echo "Done: moved $moved files, $skipped to Other/, $failed failed" >> $LOG_FILE
 echo ""

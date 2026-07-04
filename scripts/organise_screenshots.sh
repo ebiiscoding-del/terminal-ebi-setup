@@ -4,8 +4,10 @@ GREEN='\033[38;5;114m'
 BLUE='\033[38;5;39m'
 PURPLE='\033[38;5;141m'
 GRAY='\033[38;5;242m'
+RED='\033[38;5;196m'
 RESET='\033[0m'
 CHECK="${GREEN}✔${RESET}"
+CROSS="${RED}✘${RESET}"
 ARROW="${PURPLE}❯${RESET}"
 
 DESKTOP=~/Desktop
@@ -23,6 +25,7 @@ echo -e "${GRAY}  ────────────────────�
 echo ""
 
 moved=0
+failed=0
 
 for file in "$DESKTOP"/*; do
     [ -d "$file" ] && continue
@@ -44,14 +47,19 @@ for file in "$DESKTOP"/*; do
 
     target_dir="$SCREENSHOTS_DIR/$year/$month/$day/$type"
     mkdir -p "$target_dir"
-    mv "$file" "$target_dir/$filename" 2>/dev/null
-    echo -e "  ${CHECK} ${GREEN}$filename${RESET} ${GRAY}→${RESET} ${BLUE}$year/$month/$day/$type/${RESET}"
-    echo "  ✔ $filename → $year/$month/$day/$type/" >> $LOG_FILE
-    ((moved++))
+    if mv "$file" "$target_dir/$filename" 2>>"$LOG_FILE"; then
+        echo -e "  ${CHECK} ${GREEN}$filename${RESET} ${GRAY}→${RESET} ${BLUE}$year/$month/$day/$type/${RESET}"
+        echo "  ✔ $filename → $year/$month/$day/$type/" >> $LOG_FILE
+        ((moved++))
+    else
+        echo -e "  ${CROSS} ${RED}$filename${RESET} ${GRAY}failed to move to $year/$month/$day/$type/${RESET}"
+        echo "  ✘ $filename failed to move to $year/$month/$day/$type/" >> $LOG_FILE
+        ((failed++))
+    fi
 done
 
 echo ""
 echo -e "${GRAY}  ────────────────────────────────────${RESET}"
-echo -e "  ${CHECK} ${GREEN}Done!${RESET} Organised ${BLUE}$moved${RESET} screenshots"
-echo "Done: organised $moved screenshots" >> $LOG_FILE
+echo -e "  ${CHECK} ${GREEN}Done!${RESET} Organised ${BLUE}$moved${RESET} screenshots, ${RED}$failed${RESET} failed"
+echo "Done: organised $moved screenshots, $failed failed" >> $LOG_FILE
 echo ""
