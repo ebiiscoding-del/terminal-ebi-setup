@@ -10,7 +10,7 @@ CHECK="${GREEN}✔${RESET}"
 CROSS="${RED}✘${RESET}"
 ARROW="${PURPLE}❯${RESET}"
 
-REPO=~/Documents/Ebi\'s\ Workspace/terminal-ebi-setup
+REPO="$HOME/Documents/Ebi Workspace (Backup)/terminal-ebi-setup"
 DOTFILES_DIR=$REPO/dotfiles
 LOG_FILE=~/.logs/backup_dotfiles.log
 mkdir -p ~/.logs

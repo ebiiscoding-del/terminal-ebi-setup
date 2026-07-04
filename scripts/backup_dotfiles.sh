@@ -10,7 +10,7 @@ CHECK="${GREEN}✔${RESET}"
 CROSS="${RED}✘${RESET}"
 ARROW="${PURPLE}❯${RESET}"
 
-REPO=~/Documents/Ebi\'s\ Workspace/terminal-ebi-setup
+REPO="$HOME/Documents/Ebi Workspace (Backup)/terminal-ebi-setup"
 DOTFILES_DIR=$REPO/dotfiles
 LOG_FILE=~/.logs/backup_dotfiles.log
 mkdir -p ~/.logs
@@ -23,6 +23,12 @@ echo ""
 echo -e "${PURPLE}  Dotfiles Backup${RESET}"
 echo -e "${GRAY}  ────────────────────────────────────${RESET}"
 echo ""
+
+if [ ! -d "$REPO/.git" ]; then
+    echo -e "  ${CROSS} ${RED}REPO not found or not a git repo: $REPO${RESET}"
+    echo "  ✘ REPO not found or not a git repo: $REPO" >> $LOG_FILE
+    exit 1
+fi
 
 mkdir -p "$DOTFILES_DIR"
 
@@ -61,13 +67,26 @@ echo ""
 echo -e "${ARROW} ${BLUE}Pushing to GitHub...${RESET}"
 echo "Pushing to GitHub..." >> $LOG_FILE
 
-cd "$REPO"
-if [ -n "$(git status --porcelain)" ]; then
+cd "$REPO" || { echo -e "  ${CROSS} ${RED}Could not cd into $REPO${RESET}"; echo "  ✘ Could not cd into $REPO" >> $LOG_FILE; exit 1; }
+
+STATUS=$(git status --porcelain 2>&1)
+GIT_STATUS_RC=$?
+
+if [ $GIT_STATUS_RC -ne 0 ]; then
+    echo -e "  ${CROSS} ${RED}git status failed: $STATUS${RESET}"
+    echo "  ✘ git status failed: $STATUS" >> $LOG_FILE
+    exit 1
+elif [ -n "$STATUS" ]; then
     git add dotfiles/
     git commit -m "Auto backup: dotfiles $(date '+%Y-%m-%d %H:%M')"
-    git push
-    echo -e "  ${CHECK} ${GREEN}Pushed to GitHub!${RESET}"
-    echo "Pushed to GitHub successfully" >> $LOG_FILE
+    if git push; then
+        echo -e "  ${CHECK} ${GREEN}Pushed to GitHub!${RESET}"
+        echo "Pushed to GitHub successfully" >> $LOG_FILE
+    else
+        echo -e "  ${CROSS} ${RED}git push failed${RESET}"
+        echo "  ✘ git push failed" >> $LOG_FILE
+        exit 1
+    fi
 else
     echo -e "  ${CHECK} ${GRAY}No changes — already up to date${RESET}"
     echo "No changes to push" >> $LOG_FILE

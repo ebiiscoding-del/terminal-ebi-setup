@@ -53,7 +53,7 @@ _build_prompt() {
 
     local status_box="%K{${s_color}}%F{232} ${s_icon} %f%k"
     local exec_box="%K{141}%F{232} ${_cmd_exec_time} %f%k"
-    local time_box="%K{24}%F{255} ${timestamp} %f%k"
+    local time_box="%K{205}%F{255} ${timestamp} %f%k"
 
     PROMPT="
 %F{238}╭─%f ${path_colored}${git_info}
