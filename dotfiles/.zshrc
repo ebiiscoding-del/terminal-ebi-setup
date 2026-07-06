@@ -40,7 +40,7 @@ source /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 
 # ---- Eza (better ls) -----
 function ls() {
-  script -q /dev/null eza -TL 5 --icons --color=always --group-directories-first "$@" | python3 ~/.coloreza.py
+  script -q /dev/null eza -TL 5 --icons --color=always --group-directories-first --ignore-glob="node_modules|.git|__pycache__|dist|build|.venv|*.egg-info" "$@" | python3 ~/.coloreza.py
 }
 
 # ---- Zoxide (better cd) ----
