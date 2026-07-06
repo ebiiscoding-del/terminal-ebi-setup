@@ -23,16 +23,22 @@ echo -e "${PURPLE}  Downloads Organiser${RESET}"
 echo -e "${GRAY}  ────────────────────────────────────${RESET}"
 echo ""
 
-declare -A FOLDERS
-FOLDERS["Images"]="jpg jpeg png gif svg webp ico bmp tiff heic"
-FOLDERS["Videos"]="mp4 mov avi mkv wmv flv m4v webm"
-FOLDERS["Music"]="mp3 wav flac m4a aac ogg wma"
-FOLDERS["Documents"]="pdf docx doc txt md xlsx xls pptx ppt pages numbers key"
-FOLDERS["Archives"]="zip tar gz rar dmg pkg iso 7z"
-FOLDERS["Apps"]="app"
-FOLDERS["Code"]="js ts py sh zsh bash json yaml yml toml html css scss"
+FOLDER_NAMES="Images Videos Music Documents Archives Apps Code"
 
-for folder in "${!FOLDERS[@]}"; do
+folder_for_ext() {
+  case "$1" in
+    jpg|jpeg|png|gif|svg|webp|ico|bmp|tiff|heic) echo "Images" ;;
+    mp4|mov|avi|mkv|wmv|flv|m4v|webm) echo "Videos" ;;
+    mp3|wav|flac|m4a|aac|ogg|wma) echo "Music" ;;
+    pdf|docx|doc|txt|md|xlsx|xls|pptx|ppt|pages|numbers|key) echo "Documents" ;;
+    zip|tar|gz|rar|dmg|pkg|iso|7z) echo "Archives" ;;
+    app) echo "Apps" ;;
+    js|ts|py|sh|zsh|bash|json|yaml|yml|toml|html|css|scss) echo "Code" ;;
+    *) echo "" ;;
+  esac
+}
+
+for folder in $FOLDER_NAMES; do
   mkdir -p "$DOWNLOADS/$folder"
 done
 mkdir -p "$DOWNLOADS/Other"
@@ -46,25 +52,18 @@ for file in "$DOWNLOADS"/*; do
   filename=$(basename "$file")
   ext="${filename##*.}"
   ext=$(echo "$ext" | tr '[:upper:]' '[:lower:]')
-  moved_flag=false
-  for folder in "${!FOLDERS[@]}"; do
-    for e in ${FOLDERS[$folder]}; do
-      if [ "$ext" = "$e" ]; then
-        if mv "$file" "$DOWNLOADS/$folder/$filename" 2>>"$LOG_FILE"; then
-          echo -e "  ${CHECK} ${GREEN}$filename${RESET} ${GRAY}→${RESET} ${BLUE}$folder/${RESET}"
-          echo "  ✔ $filename → $folder/" >> $LOG_FILE
-          ((moved++))
-        else
-          echo -e "  ${CROSS} ${RED}$filename${RESET} ${GRAY}failed to move to $folder/${RESET}"
-          echo "  ✘ $filename failed to move to $folder/" >> $LOG_FILE
-          ((failed++))
-        fi
-        moved_flag=true
-        break 2
-      fi
-    done
-  done
-  if [ "$moved_flag" = false ]; then
+  folder=$(folder_for_ext "$ext")
+  if [ -n "$folder" ]; then
+    if mv "$file" "$DOWNLOADS/$folder/$filename" 2>>"$LOG_FILE"; then
+      echo -e "  ${CHECK} ${GREEN}$filename${RESET} ${GRAY}→${RESET} ${BLUE}$folder/${RESET}"
+      echo "  ✔ $filename → $folder/" >> $LOG_FILE
+      ((moved++))
+    else
+      echo -e "  ${CROSS} ${RED}$filename${RESET} ${GRAY}failed to move to $folder/${RESET}"
+      echo "  ✘ $filename failed to move to $folder/" >> $LOG_FILE
+      ((failed++))
+    fi
+  else
     if mv "$file" "$DOWNLOADS/Other/$filename" 2>>"$LOG_FILE"; then
       echo -e "  ${ARROW} ${GRAY}$filename → Other/${RESET}"
       echo "  → $filename → Other/" >> $LOG_FILE
