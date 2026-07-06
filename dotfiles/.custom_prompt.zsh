@@ -48,13 +48,13 @@ _last_exit=0
 
 preexec() { _cmd_start_time=$EPOCHSECONDS }
 
-_success_words=("Yay"  "Nice"      "Boom"        "Woo"        "Nailed it" "Sweet")
-_success_exec=("took"  "in just"   "wrapped in"  "only took"  "in"        "done in")
-_success_time=("@"     "at"        "right at"    "@"          "at"        "@")
+_success_words=("Yay"          "Nice"       "Boom"           "Woo"            "Nailed it"    "Sweet")
+_success_exec=("took"         "in just"    "wrapped in"     "only took"      "in"           "done in")
+_success_time=("clock says"   "timestamp:" "for the record" "receipts show"  "witnessed at" "logged at")
 
-_failure_words=("Oops" "Yikes"   "Nope"           "Ugh"       "D'oh"        "Busted")
-_failure_exec=("blew up after" "died in" "gave up after" "failed in" "broke after" "crashed in")
-_failure_time=("@"     "at"      "@"              "at"        "@"           "right at")
+_failure_words=("Oops"          "Yikes"   "Nope"            "Ugh"         "D'oh"        "Busted")
+_failure_exec=("blew up after" "died in" "gave up after"   "failed in"   "broke after" "crashed in")
+_failure_time=("time of death" "RIP at"  "per the record"  "clock says"  "stamped at"  "evidence shows")
 
 _build_prompt() {
     local home_icon=$(_home_icon)
