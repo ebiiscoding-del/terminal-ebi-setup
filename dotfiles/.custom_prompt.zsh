@@ -1,7 +1,10 @@
 # ── Custom colored path prompt ──
 
+_home_icons=("🍏" "🍎")
+_session_home_icon="${_home_icons[$((RANDOM % ${#_home_icons[@]} + 1))]}"
+
 _home_icon() {
-    echo "%F{255} \uf8ff %f"
+    echo "%F{255}${_session_home_icon} %f"
 }
 
 _color_path() {
