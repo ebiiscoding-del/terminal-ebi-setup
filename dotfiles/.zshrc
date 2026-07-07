@@ -1,4 +1,4 @@
-figlet -f slant "TH3ERV" | while IFS= read -r line; do
+figlet -f univers "TH3ERV" | while IFS= read -r line; do
   padding=$(( (COLUMNS - ${#line}) / 2 ))
   printf "%${padding}s%s\n" "" "$line"
 done | lolcat --freq 0.2 --seed 40
