@@ -10,7 +10,7 @@ CHECK="${GREEN}✔${RESET}"
 CROSS="${RED}✘${RESET}"
 ARROW="${PURPLE}❯${RESET}"
 
-REPO="$HOME/Documents/Ebi Workspace (Backup)/terminal-ebi-setup"
+REPO="$HOME/terminal-ebi-setup"
 DOTFILES_DIR=$REPO/dotfiles
 LOG_FILE=~/.logs/backup_dotfiles.log
 mkdir -p ~/.logs
@@ -32,20 +32,36 @@ fi
 
 mkdir -p "$DOTFILES_DIR"
 
-declare -a FILES=(
-    "$HOME/.zshrc"
-    "$HOME/.p10k.zsh"
-    "$HOME/.gitconfig"
-    "$HOME/.coloreza.py"
-    "$HOME/.organise_downloads.sh"
-    "$HOME/.organise_screenshots.sh"
-    "$HOME/.backup_dotfiles.sh"
-    "$HOME/.devstart.sh"
-    "$HOME/.devstop.sh"
-    "$HOME/.git_helper.sh"
-    "$HOME/.pomodoro.sh"
-    "$HOME/.custom_prompt.zsh"
-)
+# Dynamically discover what to back up from what's tracked in the repo,
+# instead of a hardcoded list — a hardcoded list is exactly what caused
+# dashboard.sh, ollama_start.sh, and screenshot_viewer.py to silently
+# never get backed up.
+declare -a FILES=()
+
+_already_listed() {
+    local needle="$1"
+    for x in "${FILES[@]}"; do
+        [[ "$x" == "$needle" ]] && return 0
+    done
+    return 1
+}
+
+for f in "$REPO"/dotfiles/.*; do
+    fname=$(basename "$f")
+    [[ "$fname" == "." || "$fname" == ".." ]] && continue
+    [[ -f "$f" ]] || continue
+    target="$HOME/$fname"
+    [[ -f "$target" ]] || continue
+    _already_listed "$target" || FILES+=("$target")
+done
+
+for f in "$REPO"/scripts/*.sh "$REPO"/scripts/*.py; do
+    [[ -f "$f" ]] || continue
+    fname=".$(basename "$f")"
+    target="$HOME/$fname"
+    [[ -f "$target" ]] || continue
+    _already_listed "$target" || FILES+=("$target")
+done
 
 copied=0
 

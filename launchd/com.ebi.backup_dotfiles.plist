@@ -7,7 +7,7 @@
     <key>ProgramArguments</key>
     <array>
         <string>/bin/bash</string>
-        <string>/Users/ebinezardhanaraj/.backup_dotfiles.sh</string>
+        <string>__HOME__/.backup_dotfiles.sh</string>
     </array>
     <key>StartCalendarInterval</key>
     <dict>
