@@ -4,6 +4,22 @@ figlet -f slant "TH3ERV" | while IFS= read -r line; do
 done | lolcat --freq 0.2 --seed 40
 fastfetch
 
+_greetings=(
+  "Terminal's warmed up. Let's break something beautiful."
+  "Welcome back, chaos engineer."
+  "Another day, another commit message you'll regret."
+  "Systems nominal. Mistakes pending."
+  "You. Me. This shell. Let's cause some bugs."
+  "Booting sarcasm module... done."
+  "Coffee not included. Bugs are free though."
+  "Loading motivation... 404 not found."
+)
+_greeting_colors=(39 141 212 114 226 208 87 183 209 75)
+_g="${_greetings[$((RANDOM % ${#_greetings[@]} + 1))]}"
+_gc="${_greeting_colors[$((RANDOM % ${#_greeting_colors[@]} + 1))]}"
+echo -e "\033[38;5;${_gc}m${_g}\033[0m"
+echo ""
+
 typeset -g POWERLEVEL9K_INSTANT_PROMPT=quiet
 # Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
 # Initialization code that may require console input (password prompts, [y/n]
