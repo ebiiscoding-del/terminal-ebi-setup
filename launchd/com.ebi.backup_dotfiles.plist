@@ -8,15 +8,11 @@
     <array>
         <string>/bin/bash</string>
         <string>__HOME__/.backup_dotfiles.sh</string>
+        <string>--scheduled</string>
     </array>
-    <key>StartCalendarInterval</key>
-    <dict>
-        <key>Hour</key>
-        <integer>8</integer>
-        <key>Minute</key>
-        <integer>10</integer>
-    </dict>
     <key>RunAtLoad</key>
-    <false/>
+    <true/>
+    <key>StartInterval</key>
+    <integer>14400</integer>
 </dict>
 </plist>
