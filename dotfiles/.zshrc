@@ -1,3 +1,25 @@
+# ---- Auto-record session (enables cplast: copy last command's output on demand) ----
+# NOTE: if this ever causes display/typing glitches, comment out this whole
+# block (down to and including "fi") to fully disable it -- everything else
+# in this file works fine without it.
+if [ -z "$IN_SCRIPT_RECORDING" ]; then
+    export IN_SCRIPT_RECORDING=1
+    exec script -q ~/.session_transcript.log
+fi
+
+# The script wrapper above can cause zsh to lose track of the real terminal
+# width (falls back to a stale/default COLUMNS). Re-check it directly before
+# every prompt so RPROMPT positioning and line-redraw stay accurate.
+_resync_terminal_size() {
+  local sz=($(stty size 2>/dev/null))
+  if [ -n "$sz[1]" ]; then
+    LINES=$sz[1]
+    COLUMNS=$sz[2]
+  fi
+}
+autoload -Uz add-zsh-hook
+add-zsh-hook precmd _resync_terminal_size
+
 figlet -f univers "TH3ERV" | while IFS= read -r line; do
   padding=$(( (COLUMNS - ${#line}) / 2 ))
   printf "%${padding}s%s\n" "" "$line"
@@ -62,6 +84,52 @@ function ls() {
 # ---- Eza tree view (opt-in, for when you actually want the recursive view) ----
 function lt() {
   script -q /dev/null eza -TL 5 --icons --color=always --group-directories-first --ignore-glob="node_modules|.git|__pycache__|dist|build|.venv|*.egg-info|Library|Group Containers|Containers" "$@" | python3 ~/.coloreza.py
+}
+
+# ---- Strip ANSI codes so clipboard content is clean, plain text ----
+_strip_ansi() {
+  python3 ~/.strip_ansi.py
+}
+
+# ---- cc: run a command, show it normally, AND copy its clean output to clipboard ----
+# Usage: cc ls -la ~/Downloads
+cc() {
+  "$@" 2>&1 | tee /dev/tty | _strip_ansi | pbcopy
+}
+
+# ---- cplast: copy the last N commands' output to clipboard, decided after the fact ----
+# Usage: cplast       -> copies just the last command's output
+#        cplast 3     -> copies the last 3 commands' output (with context)
+cplast() {
+  local N="${1:-1}"
+  if ! [[ "$N" =~ ^[0-9]+$ ]] || [ "$N" -lt 1 ]; then
+    echo "Usage: cplast [N]  (N must be a positive number, default 1)"
+    return 1
+  fi
+  local log="$HOME/.session_transcript.log"
+  if [ ! -f "$log" ]; then
+    echo "No session transcript found."
+    return 1
+  fi
+  local -a prompt_lines
+  prompt_lines=($(grep -n "╭─" "$log" | cut -d: -f1))
+  local n=${#prompt_lines[@]}
+  if [ "$N" -ge "$n" ]; then
+    echo "Not enough command history yet (only $((n-1)) command(s) available)."
+    return 1
+  fi
+  local start=$((prompt_lines[n-N] + 2))
+  local end=$((prompt_lines[n] - 1))
+  if [ "$end" -lt "$start" ]; then
+    echo "No output to copy."
+    return 1
+  fi
+  sed -n "${start},${end}p" "$log" | _strip_ansi | pbcopy
+  if [ "$N" -eq 1 ]; then
+    echo "✔ Copied last command's output to clipboard."
+  else
+    echo "✔ Copied last $N commands' output to clipboard."
+  fi
 }
 
 # ---- Zoxide (better cd) ----
