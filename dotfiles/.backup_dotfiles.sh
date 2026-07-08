@@ -15,8 +15,13 @@ DOTFILES_DIR=$REPO/dotfiles
 LOG_FILE=~/.logs/backup_dotfiles.log
 mkdir -p ~/.logs
 
+RUN_TAG="[manual]"
+if [ "$1" = "--scheduled" ]; then
+    RUN_TAG="[scheduled]"
+fi
+
 echo "" >> $LOG_FILE
-echo "── $(date '+%Y-%m-%d %H:%M:%S') ──────────────────────" >> $LOG_FILE
+echo "── $(date '+%Y-%m-%d %H:%M:%S') ${RUN_TAG} ──────────────────────" >> $LOG_FILE
 echo "Starting Dotfiles Backup" >> $LOG_FILE
 
 echo ""

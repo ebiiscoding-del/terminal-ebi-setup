@@ -15,8 +15,13 @@ SCREENSHOTS_DIR=~/Downloads/Screenshots
 LOG_FILE=~/.logs/organise_screenshots.log
 mkdir -p ~/.logs
 
+RUN_TAG="[manual]"
+if [ "$1" = "--scheduled" ]; then
+    RUN_TAG="[scheduled]"
+fi
+
 echo "" >> $LOG_FILE
-echo "── $(date '+%Y-%m-%d %H:%M:%S') ──────────────────────" >> $LOG_FILE
+echo "── $(date '+%Y-%m-%d %H:%M:%S') ${RUN_TAG} ──────────────────────" >> $LOG_FILE
 echo "Starting Screenshots Organiser" >> $LOG_FILE
 
 echo ""

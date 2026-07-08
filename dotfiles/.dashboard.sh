@@ -39,14 +39,49 @@ check_script() {
     local name=$1
     local log=$2
     local schedule=$3
+    local today=$(date '+%Y-%m-%d')
 
     if [ -f "$log" ]; then
-        last_run=$(grep "──" "$log" | tail -1 | awk '{print $2, $3}')
-        last_status=$(tail -1 "$log")
-        echo -e "  ${GREEN}✔${RESET} ${WHITE}${name}${RESET}"
+        local last_scheduled_line=$(grep -E "^── [0-9]{4}-[0-9]{2}-[0-9]{2}.*\[scheduled\]" "$log" | tail -1)
+        local last_any_line=$(grep -E "^── [0-9]{4}-[0-9]{2}-[0-9]{2}" "$log" | tail -1)
+        local last_status=$(tail -1 "$log")
+
+        # A run only actually failed if it shows a ✘ marker, or a "N failed"
+        # count where N > 0 -- the routine success summary always includes
+        # "0 failed" as part of its normal wording, which isn't a failure.
+        local status_color="$GREEN"
+        if echo "$last_status" | grep -q "✘"; then
+            status_color="$RED"
+        else
+            local fail_count=$(echo "$last_status" | grep -oE "[0-9]+ failed" | grep -oE "^[0-9]+")
+            if [ -n "$fail_count" ] && [ "$fail_count" -gt 0 ]; then
+                status_color="$RED"
+            fi
+        fi
+
+        echo -e "  ${WHITE}${name}${RESET}"
         echo -e "    ${GRAY}Schedule:${RESET}  ${YELLOW}${schedule}${RESET}"
-        echo -e "    ${GRAY}Last run:${RESET}  ${BLUE}${last_run}${RESET}"
-        echo -e "    ${GRAY}Status:${RESET}    ${GREEN}${last_status}${RESET}"
+
+        if [ -n "$last_scheduled_line" ]; then
+            local sched_date=$(echo "$last_scheduled_line" | awk '{print $2}')
+            local sched_time=$(echo "$last_scheduled_line" | awk '{print $3}')
+            if [ "$sched_date" = "$today" ]; then
+                echo -e "  ${GREEN}✔${RESET}  ${GRAY}Last scheduled run:${RESET}  ${BLUE}${sched_date} ${sched_time}${RESET} ${GREEN}(today)${RESET}"
+            else
+                echo -e "  ${YELLOW}⚠${RESET}  ${GRAY}Last scheduled run:${RESET}  ${YELLOW}${sched_date} ${sched_time}${RESET} ${YELLOW}(not today -- automation hasn't fired yet)${RESET}"
+            fi
+        else
+            echo -e "  ${YELLOW}⚠${RESET}  ${GRAY}Last scheduled run:${RESET}  ${YELLOW}never recorded${RESET}"
+        fi
+
+        if [ -n "$last_any_line" ]; then
+            local any_date=$(echo "$last_any_line" | awk '{print $2}')
+            local any_time=$(echo "$last_any_line" | awk '{print $3}')
+            local any_tag=$(echo "$last_any_line" | grep -oE "\[manual\]|\[scheduled\]")
+            echo -e "    ${GRAY}Last run (any):${RESET} ${BLUE}${any_date} ${any_time}${RESET} ${GRAY}${any_tag}${RESET}"
+        fi
+
+        echo -e "    ${GRAY}Status:${RESET}    ${status_color}${last_status}${RESET}"
     else
         echo -e "  ${YELLOW}◎${RESET} ${WHITE}${name}${RESET}"
         echo -e "    ${GRAY}Schedule:${RESET}  ${YELLOW}${schedule}${RESET}"
@@ -55,9 +90,9 @@ check_script() {
     echo ""
 }
 
-check_script "organise downloads" ~/.logs/organise_downloads.log "Daily 8:00AM"
-check_script "organise screenshots" ~/.logs/organise_screenshots.log "Daily 8:05AM"
-check_script "backup dotfiles" ~/.logs/backup_dotfiles.log "Daily 8:10AM"
+check_script "organise downloads" ~/.logs/organise_downloads.log "On login + every 4hrs while awake"
+check_script "organise screenshots" ~/.logs/organise_screenshots.log "On login + every 4hrs while awake"
+check_script "backup dotfiles" ~/.logs/backup_dotfiles.log "On login + every 4hrs while awake"
 
 # ── Quick Actions ──
 echo -e "${CYAN}${BOLD}  ── Quick Actions ───────────────────────────────────${RESET}"
