@@ -37,7 +37,9 @@ for file in "$DESKTOP"/*; do
     month=$(echo $date_created | cut -d'-' -f2)
     day=$(echo $date_created | cut -d'-' -f3)
 
-    if [[ "$filename" == Screen\ Shot* ]] || [[ "$filename" == Screenshot* ]]; then
+    if [[ "$filename" == Simulator\ Screenshot* ]]; then
+        type="Simulator"
+    elif [[ "$filename" == Screen\ Shot* ]] || [[ "$filename" == Screenshot* ]]; then
         type="Screenshots"
     elif [ "$ext" = "mov" ] || [ "$ext" = "mp4" ]; then
         type="Recordings"

@@ -24,22 +24,44 @@ echo -e "${PURPLE}  Dotfiles Backup${RESET}"
 echo -e "${GRAY}  ────────────────────────────────────${RESET}"
 echo ""
 
+if [ ! -d "$REPO/.git" ]; then
+    echo -e "  ${CROSS} ${RED}REPO not found or not a git repo: $REPO${RESET}"
+    echo "  ✘ REPO not found or not a git repo: $REPO" >> $LOG_FILE
+    exit 1
+fi
+
 mkdir -p "$DOTFILES_DIR"
 
-declare -a FILES=(
-    "$HOME/.zshrc"
-    "$HOME/.p10k.zsh"
-    "$HOME/.gitconfig"
-    "$HOME/.coloreza.py"
-    "$HOME/.organise_downloads.sh"
-    "$HOME/.organise_screenshots.sh"
-    "$HOME/.backup_dotfiles.sh"
-    "$HOME/.devstart.sh"
-    "$HOME/.devstop.sh"
-    "$HOME/.git_helper.sh"
-    "$HOME/.pomodoro.sh"
-    "$HOME/.custom_prompt.zsh"
-)
+# Dynamically discover what to back up from what's tracked in the repo,
+# instead of a hardcoded list — a hardcoded list is exactly what caused
+# dashboard.sh, ollama_start.sh, and screenshot_viewer.py to silently
+# never get backed up.
+declare -a FILES=()
+
+_already_listed() {
+    local needle="$1"
+    for x in "${FILES[@]}"; do
+        [[ "$x" == "$needle" ]] && return 0
+    done
+    return 1
+}
+
+for f in "$REPO"/dotfiles/.*; do
+    fname=$(basename "$f")
+    [[ "$fname" == "." || "$fname" == ".." ]] && continue
+    [[ -f "$f" ]] || continue
+    target="$HOME/$fname"
+    [[ -f "$target" ]] || continue
+    _already_listed "$target" || FILES+=("$target")
+done
+
+for f in "$REPO"/scripts/*.sh "$REPO"/scripts/*.py; do
+    [[ -f "$f" ]] || continue
+    fname=".$(basename "$f")"
+    target="$HOME/$fname"
+    [[ -f "$target" ]] || continue
+    _already_listed "$target" || FILES+=("$target")
+done
 
 copied=0
 
@@ -61,13 +83,26 @@ echo ""
 echo -e "${ARROW} ${BLUE}Pushing to GitHub...${RESET}"
 echo "Pushing to GitHub..." >> $LOG_FILE
 
-cd "$REPO"
-if [ -n "$(git status --porcelain)" ]; then
+cd "$REPO" || { echo -e "  ${CROSS} ${RED}Could not cd into $REPO${RESET}"; echo "  ✘ Could not cd into $REPO" >> $LOG_FILE; exit 1; }
+
+STATUS=$(git status --porcelain 2>&1)
+GIT_STATUS_RC=$?
+
+if [ $GIT_STATUS_RC -ne 0 ]; then
+    echo -e "  ${CROSS} ${RED}git status failed: $STATUS${RESET}"
+    echo "  ✘ git status failed: $STATUS" >> $LOG_FILE
+    exit 1
+elif [ -n "$STATUS" ]; then
     git add dotfiles/
     git commit -m "Auto backup: dotfiles $(date '+%Y-%m-%d %H:%M')"
-    git push
-    echo -e "  ${CHECK} ${GREEN}Pushed to GitHub!${RESET}"
-    echo "Pushed to GitHub successfully" >> $LOG_FILE
+    if git push; then
+        echo -e "  ${CHECK} ${GREEN}Pushed to GitHub!${RESET}"
+        echo "Pushed to GitHub successfully" >> $LOG_FILE
+    else
+        echo -e "  ${CROSS} ${RED}git push failed${RESET}"
+        echo "  ✘ git push failed" >> $LOG_FILE
+        exit 1
+    fi
 else
     echo -e "  ${CHECK} ${GRAY}No changes — already up to date${RESET}"
     echo "No changes to push" >> $LOG_FILE
