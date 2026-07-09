@@ -1,5 +1,7 @@
 #!/bin/bash
 
+shopt -s nullglob
+
 GREEN='\033[38;5;114m'
 BLUE='\033[38;5;39m'
 PURPLE='\033[38;5;141m'

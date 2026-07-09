@@ -2,7 +2,13 @@
 # NOTE: if this ever causes display/typing glitches, comment out this whole
 # block (down to and including "fi") to fully disable it -- everything else
 # in this file works fine without it.
-if [ -z "$IN_SCRIPT_RECORDING" ]; then
+#
+# IMPORTANT: only activate for a genuine interactive terminal session (stdin
+# is a real tty). Apps like Zed/VS Code spawn a background shell just to
+# capture PATH/env vars, reading its output via a pipe -- without this guard,
+# that spawned shell gets hijacked into `script`'s interactive recording
+# session and never exits, hanging whatever was waiting to read its output.
+if [ -z "$IN_SCRIPT_RECORDING" ] && [ -t 0 ]; then
     export IN_SCRIPT_RECORDING=1
     exec script -q ~/.session_transcript.log
 fi
