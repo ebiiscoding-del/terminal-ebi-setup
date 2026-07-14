@@ -629,3 +629,4 @@ nthtaste-deploy() {
 
   echo ""
 }
+alias qwen-serve='LLAMA_CACHE="/Volumes/LLM Library/llm-models" llama-server -hf unsloth/Qwen3.6-27B-GGUF:UD-Q4_K_XL -c 32768 -ngl 99 --jinja --no-mmproj --reasoning off --port 8080'

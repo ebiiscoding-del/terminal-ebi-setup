@@ -19,12 +19,30 @@ _color_path() {
     parts=("${(s:/:)path_str}")
     for part in "${parts[@]}"; do [[ -n "$part" ]] && filtered+=("$part"); done
     [[ ${#filtered[@]} -eq 0 ]] && { echo ""; return; }
+
+    # Keep the breadcrumb bounded regardless of how deep the directory nesting
+    # goes -- an unbounded path here is what caused RPROMPT to overflow and
+    # wrap on long paths. Show only the last N segments, with a truncation
+    # marker standing in for anything dropped.
+    local max_segments=3
+    local -a truncated=("${filtered[@]}")
+    local was_truncated=0
+    if [[ ${#filtered[@]} -gt $max_segments ]]; then
+        truncated=("${filtered[@]: -$max_segments}")
+        was_truncated=1
+    fi
+
     local -a bg_colors
     bg_colors=(39 141 212 114 226 208 87 183 209 75)
     local fg=232 ARROW=$'\ue0b0' result=""
-    local total=${#filtered[@]}
+    local total=${#truncated[@]}
+
+    if [[ $was_truncated -eq 1 ]]; then
+        result+="%K{242}%F{$fg} … %f%k%K{${bg_colors[1]}}%F{242}${ARROW}%f%k"
+    fi
+
     for ((i=1; i<=total; i++)); do
-        local part="${filtered[$i]}"
+        local part="${truncated[$i]}"
         local bg="${bg_colors[$(( ((i-1) % 10) + 1 ))]}"
         local next_bg="${bg_colors[$(( (i % 10) + 1 ))]}"
         result+="%K{$bg}%F{$fg} ${part} %f%k"
@@ -86,7 +104,7 @@ _build_prompt() {
     local exec_box="%K{141}%F{232} ${exec_phrase} ${_cmd_exec_time} %f%k"
     local time_box="%K{205}%F{232} ${time_phrase} ${timestamp} %f%k"
 
-    PROMPT="
+    PROMPT="%f%k
 %F{238}╭─%f ${home_icon}${path_colored}${git_info}
 %F{238}╰─❯%f "
 
