@@ -630,3 +630,68 @@ nthtaste-deploy() {
   echo ""
 }
 alias qwen-serve='LLAMA_CACHE="/Volumes/LLM Library/llm-models" llama-server -hf unsloth/Qwen3.6-27B-GGUF:UD-Q4_K_XL -c 32768 -ngl 99 --jinja --no-mmproj --reasoning off --port 8080'
+goto() {
+  case "$1" in
+    air) ssh ebi@Ebinezars-MacBook-Air.local ;;
+    *) echo "Usage: goto air" ;;
+  esac
+}
+
+airstart() {
+  ssh ebi@Ebinezars-MacBook-Air.local '~/scripts/start-air-syndicate.sh'
+}
+
+airstatus() {
+  ssh ebi@Ebinezars-MacBook-Air.local '
+    CYAN="\033[1;36m"
+    GREEN="\033[1;32m"
+    RED="\033[1;31m"
+    YELLOW="\033[1;33m"
+    BLUE="\033[1;34m"
+    BOLD="\033[1m"
+    NC="\033[0m"
+
+    echo ""
+    echo -e "${CYAN}✈️  AIR SYNDICATE — STATUS CHECK${NC}"
+    echo -e "${CYAN}────────────────────────────────────${NC}"
+    echo ""
+    echo -e "${BOLD}Crew roster:${NC}"
+
+    for svc in backend frontend tunnel-backend tunnel-frontend colima dockercompose; do
+      LINE=$(launchctl list | grep "com.airsyndicate.$svc" | head -1)
+      PID=$(echo "$LINE" | awk "{print \$1}")
+      if [ "$PID" != "-" ] && [ -n "$PID" ]; then
+        printf "  ${GREEN}●${NC} %-20s ${GREEN}running${NC} (pid %s)\n" "$svc" "$PID"
+      else
+        printf "  ${RED}●${NC} %-20s ${RED}down${NC}\n" "$svc"
+      fi
+    done
+
+    echo ""
+    FRONTEND_URL=$(grep -o "https://[a-zA-Z0-9.-]*trycloudflare.com" ~/tunnel-frontend.log | tail -1)
+    BACKEND_URL=$(grep -o "https://[a-zA-Z0-9.-]*trycloudflare.com" ~/tunnel-backend.log | tail -1)
+
+    echo -e "${BOLD}Play URL:${NC}"
+    echo -e "  ${YELLOW}🌍 $FRONTEND_URL${NC}"
+
+    echo ""
+    echo -e "${BOLD}Backend pulse:${NC}"
+    RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 "$BACKEND_URL/api/routes/world")
+    if [ "$RESPONSE" = "200" ]; then
+      echo -e "  ${GREEN}✓ Responding (HTTP 200)${NC}"
+    else
+      echo -e "  ${RED}✗ Not responding as expected (HTTP $RESPONSE)${NC}"
+    fi
+
+    echo ""
+    echo -e "${BOLD}Frontend pulse:${NC}"
+    FRESPONSE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 "$FRONTEND_URL")
+    if [ "$FRESPONSE" = "307" ] || [ "$FRESPONSE" = "200" ]; then
+      echo -e "  ${GREEN}✓ Responding (HTTP $FRESPONSE)${NC}"
+    else
+      echo -e "  ${RED}✗ Not responding as expected (HTTP $FRESPONSE)${NC}"
+    fi
+    echo ""
+    echo -e "${CYAN}────────────────────────────────────${NC}"
+  '
+}
