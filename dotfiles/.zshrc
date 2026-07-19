@@ -695,3 +695,14 @@ airstatus() {
     echo -e "${CYAN}────────────────────────────────────${NC}"
   '
 }
+
+# Airsyndicate — TASK.md deploy to project
+movetask() {
+  mv ~/Downloads/TASK.md /Users/ebi/Workshop/craftlane/games/air-syndicate/TASK.md
+  echo "✅ TASK.md moved to air-syndicate"
+}
+
+movetask() {
+  mv ~/Downloads/TASK.md /Users/ebi/Workshop/craftlane/games/air-syndicate/TASK.md
+  echo "✅ TASK.md moved to air-syndicate"
+}
