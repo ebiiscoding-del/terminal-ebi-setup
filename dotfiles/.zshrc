@@ -702,7 +702,61 @@ movetask() {
   echo "✅ TASK.md moved to air-syndicate"
 }
 
+# --- Move TASK.md to Air Syndicate Folder ---
 movetask() {
   mv ~/Downloads/TASK.md /Users/ebi/Workshop/craftlane/games/air-syndicate/TASK.md
   echo "✅ TASK.md moved to air-syndicate"
 }
+
+# --- Prevent sleep on lid close (for long AI renders) ---
+
+_stay_awake_msgs=(
+    "☕ Staying up all night, just like you. No dreams for either of us."
+    "🦉 Nocturnal mode: engaged. The GPU and I salute you."
+    "🎬 Lights, camera, no sleep. This render waits for no one."
+    "🔋 Sleep is for laptops with weaker resolve. Not tonight."
+    "🚨 Insomnia.exe has been forcibly installed on this MacBook."
+    "🌙 The moon's out, the fans are loud, and nobody's napping."
+)
+
+_let_sleep_msgs=(
+    "😴 Alright, we both earned this. Sleep mode: restored."
+    "🛏️ Tucking the laptop in. Sweet dreams, little GPU."
+    "🌅 Mission complete. Let the fans finally rest."
+    "🧸 Naptime unlocked. You've been a good machine."
+    "🕊️ Peace has returned to the land of pmset."
+    "💻 Powering down the grind. See you on the next render."
+)
+
+_awake_status_awake_msgs=(
+    "🫡 Wide awake and grinding."
+    "👀 Eyes open, fans spinning, no rest in sight."
+    "⚡ Still caffeinated. Still committed."
+    "🔥 Burning bright, refusing to blink."
+)
+
+_awake_status_asleep_msgs=(
+    "💤 Sleepy and normal. As nature intended."
+    "🐌 Chill mode. The laptop is allowed to rest now."
+    "🧘 Zen mode: sleep is back on the table."
+)
+
+stay_awake() {
+    echo "${_stay_awake_msgs[$((RANDOM % ${#_stay_awake_msgs[@]} + 1))]}"
+    sudo pmset -a disablesleep 1
+}
+
+let_sleep() {
+    echo "${_let_sleep_msgs[$((RANDOM % ${#_let_sleep_msgs[@]} + 1))]}"
+    sudo pmset -a disablesleep 0
+}
+
+awake_status() {
+    local sleep_state=$(pmset -g | grep -i "SleepDisabled")
+    if echo "$sleep_state" | grep -q "1"; then
+        echo "${_awake_status_awake_msgs[$((RANDOM % ${#_awake_status_awake_msgs[@]} + 1))]}  ($sleep_state)"
+    else
+        echo "${_awake_status_asleep_msgs[$((RANDOM % ${#_awake_status_asleep_msgs[@]} + 1))]}  ($sleep_state)"
+    fi
+}
+# --- end sleep control ---
