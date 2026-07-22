@@ -760,3 +760,17 @@ awake_status() {
     fi
 }
 # --- end sleep control ---
+
+# --- ComfyUI venv shortcut ---
+comfy_venv() {
+    source ~/Workshop/craftlane/tools/ComfyUI/venv/bin/activate
+    echo "🐍 ComfyUI venv activated. Ready to summon some pixels."
+}
+
+comfy_start() {
+    comfy_venv
+    cd ~/Workshop/craftlane/tools/ComfyUI
+    echo "🚀 Launching ComfyUI..."
+    python main.py
+}
+# --- end ComfyUI venv shortcut ---
