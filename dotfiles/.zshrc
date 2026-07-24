@@ -774,3 +774,16 @@ comfy_start() {
     python main.py
 }
 # --- end ComfyUI venv shortcut ---
+
+# --- .Dot Files visibility ---
+show_dotfiles() {
+    echo "Now you see me"
+    defaults write com.apple.finder AppleShowAllFiles YES
+    killall Finder
+}   
+
+hide_dotfiles() {
+    echo "Now you don't "
+    defaults write com.apple.finder AppleShowAllFiles NO
+    killall Finder
+}
