@@ -104,16 +104,34 @@ _build_prompt() {
     local exec_box="%K{141}%F{232} ${exec_phrase} ${_cmd_exec_time} %f%k"
     local time_box="%K{205}%F{232} ${time_phrase} ${timestamp} %f%k"
 
+    # Status boxes now live on their own line, right-aligned by manually
+    # padding based on $COLUMNS -- this makes their position depend only on
+    # the terminal width, never on the path breadcrumb below, which is what
+    # caused the RPROMPT overflow/wrap/color-bleed on long or deep paths.
+    local visible_len=$(( 1 + ${#s_word} + 1 + 1 + 1 ))
+    visible_len=$(( visible_len + 1 + ${#exec_phrase} + 1 + ${#_cmd_exec_time} + 1 ))
+    visible_len=$(( visible_len + 1 + ${#time_phrase} + 1 + ${#timestamp} + 1 ))
+
+    local cols=${COLUMNS:-80}
+    local padding=$(( cols - visible_len ))
+    [[ $padding -lt 0 ]] && padding=0
+    local pad_str=""
+    if [[ $padding -gt 0 ]]; then
+        pad_str="${(l:$padding:: :)pad_str}"
+    fi
+
     PROMPT="%f%k
+${pad_str}${status_box}${exec_box}${time_box}
 %F{238}╭─%f ${home_icon}${path_colored}${git_info}
 %F{238}╰─❯%f "
 
-    RPROMPT="${status_box}${exec_box}${time_box}"
+    RPROMPT=""
     ZLE_RPROMPT_INDENT=0
 }
 
 precmd() {
     _last_exit=$?
+    _resync_terminal_size 2>/dev/null
     if [[ $_cmd_start_time -gt 0 ]]; then
         local elapsed=$(( EPOCHSECONDS - _cmd_start_time ))
         _cmd_exec_time="${elapsed}s"
