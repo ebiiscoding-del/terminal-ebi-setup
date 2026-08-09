@@ -787,3 +787,111 @@ hide_dotfiles() {
     defaults write com.apple.finder AppleShowAllFiles NO
     killall Finder
 }
+
+
+# ── FlightDeck OTA ────────────────────────────────────────────
+flightdeck-flash() {
+  local BIN=$(find ~/Library/Caches/arduino/sketches -name "msfs_panel_v28.ino.bin" 2>/dev/null | head -1)
+  if [ -z "$BIN" ]; then
+    echo "❌ No .bin found. Compile first."
+    return 1
+  fi
+  echo "🛫  FlightDeck OTA → 192.168.1.100"
+  local MSGS=("Bribing the avionics..." "Teaching ESP32 new tricks..." "Overclocking the vibes..." "Defragging the flight deck..." "Almost there, don't touch anything...")
+  python3 ~/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/tools/espota.py \
+    -i 192.168.1.100 -p 3232 -a flightdeck123 -f "$BIN" 2>&1 | {
+    local dots=0 idx=0
+    while IFS= read -r -n1 c; do
+      [[ "$c" != "." ]] && continue
+      dots=$((dots+1))
+      local pct=$((dots*100/550)); [[ $pct -gt 99 ]] && pct=99
+      local f=$((pct/5)) bar=""
+      for ((i=0;i<f;i++)); do bar+="█"; done
+      for ((i=f;i<20;i++)); do bar+="░"; done
+      (( dots % 80 == 0 )) && idx=$(( (idx+1) % 5 ))
+      printf "\r  [%s] %3d%%  %s  " "$bar" "$pct" "${MSGS[$idx]}"
+    done
+    printf "\r  [████████████████████] 100%%  Done!                    \n"
+  }
+  echo "✅  Rebooting... panel back at http://192.168.1.100"
+}
+alias fd-flash="flightdeck-flash"
+alias fd-compile="arduino-cli compile --fqbn esp32:esp32:esp32s3 --build-property 'build.usbmode=OTG' --verbose ~/Downloads/msfs_panel_v28 2>&1"
+alias fd-upload="fd-compile && fd-flash"
+# ── FlightDeck OTA ────────────────────────────────────────────
+flightdeck-flash() {
+  local BIN=$(find ~/Library/Caches/arduino/sketches -name "msfs_panel_v28.ino.bin" 2>/dev/null | head -1)
+  if [ -z "$BIN" ]; then
+    echo "❌ No .bin found. Compile first."
+    return 1
+  fi
+  echo "🛫  FlightDeck OTA → 192.168.1.100"
+  local MSGS=("Bribing the avionics..." "Teaching ESP32 new tricks..." "Overclocking the vibes..." "Defragging the flight deck..." "Almost there, don't touch anything...")
+  python3 ~/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/tools/espota.py \
+    -i 192.168.1.100 -p 3232 -a flightdeck123 -f "$BIN" 2>&1 | {
+    local dots=0 idx=0
+    while IFS= read -r line; do
+      for ((i=0; i<${#line}; i++)); do
+        [[ "${line:$i:1}" != "." ]] && continue
+        dots=$((dots+1))
+        local pct=$((dots*100/550)); [[ $pct -gt 99 ]] && pct=99
+        local f=$((pct/5)) bar=""
+        for ((j=0;j<f;j++)); do bar+="█"; done
+        for ((j=f;j<20;j++)); do bar+="░"; done
+        (( dots % 80 == 0 )) && idx=$(( (idx+1) % 5 ))
+        printf "\r  [%s] %3d%%  %s  " "$bar" "$pct" "${MSGS[$idx]}"
+      done
+    done
+    printf "\r  [████████████████████] 100%%  Done!                    \n"
+  }
+  echo "✅  Rebooting... panel back at http://192.168.1.100"
+}
+alias fd-flash="flightdeck-flash"
+alias fd-compile="arduino-cli compile --fqbn esp32:esp32:esp32s3 --build-property 'build.usbmode=OTG' --verbose ~/Downloads/msfs_panel_v28 2>&1"
+alias fd-upload="fd-compile && fd-flash"
+
+flightdeck-compile() {
+  echo "🔧  Compiling FlightDeck..."
+  local MSGS=("Crunching C++..." "Compiling LovyanGFX..." "Building HTML panel..." "Linking firmware..." "Almost done...")
+  local step=0
+  arduino-cli compile \
+    --fqbn esp32:esp32:esp32s3 \
+    --build-property 'build.usbmode=OTG' \
+    --verbose \
+    ~/Downloads/msfs_panel_v28 2>&1 | {
+    local files=0 total=60 bar=""
+    while IFS= read -r line; do
+      # Count compiled files for progress
+      if [[ "$line" == *"Compiling"* ]] || [[ "$line" == *"ar rcs"* ]]; then
+        files=$((files+1))
+        local pct=$((files*100/total)); [[ $pct -gt 99 ]] && pct=99
+        local f=$((pct/5)) bar=""
+        for ((i=0;i<f;i++)); do bar+="█"; done
+        for ((i=f;i<20;i++)); do bar+="░"; done
+        local idx=$((files % 5))
+        printf "\r  [%s] %3d%%  %s  " "$bar" "$pct" "${MSGS[$idx]}"
+      fi
+      # Print important lines
+      if [[ "$line" == *"error:"* ]]; then
+        printf "\n❌  %s\n" "$line"
+      elif [[ "$line" == *"warning:"* ]]; then
+        printf "\n⚠️   %s\n" "$line"
+      elif [[ "$line" == "Sketch uses"* ]]; then
+        printf "\r  [████████████████████] 100%%  Done!                    \n"
+        echo "📦  $line"
+      elif [[ "$line" == "Global variables"* ]]; then
+        echo "💾  $line"
+      fi
+    done
+  }
+  local EXIT=${PIPESTATUS[0]}
+  echo ""
+  if (( EXIT == 0 )); then
+    echo "✅  Compile successful!"
+  else
+    echo "❌  Compile failed — check errors above"
+  fi
+}
+alias fd-compile="flightdeck-compile"
+alias fd-upload="fd-compile && fd-flash"
+alias fd-compile="arduino-cli compile --fqbn esp32:esp32:esp32s3 --build-property 'build.usbmode=OTG' --clean ~/Downloads/msfs_panel_v28 2>&1"
