@@ -816,8 +816,6 @@ flightdeck-flash() {
   echo "✅  Rebooting... panel back at http://192.168.1.100"
 }
 alias fd-flash="flightdeck-flash"
-alias fd-compile="arduino-cli compile --fqbn esp32:esp32:esp32s3 --build-property 'build.usbmode=OTG' --verbose ~/Downloads/msfs_panel_v28 2>&1"
-alias fd-upload="fd-compile && fd-flash"
 # ── FlightDeck OTA ────────────────────────────────────────────
 flightdeck-flash() {
   local BIN=$(find ~/Library/Caches/arduino/sketches -name "msfs_panel_v28.ino.bin" 2>/dev/null | head -1)
@@ -847,8 +845,6 @@ flightdeck-flash() {
   echo "✅  Rebooting... panel back at http://192.168.1.100"
 }
 alias fd-flash="flightdeck-flash"
-alias fd-compile="arduino-cli compile --fqbn esp32:esp32:esp32s3 --build-property 'build.usbmode=OTG' --verbose ~/Downloads/msfs_panel_v28 2>&1"
-alias fd-upload="fd-compile && fd-flash"
 
 flightdeck-compile() {
   echo "🔧  Compiling FlightDeck..."
@@ -892,6 +888,40 @@ flightdeck-compile() {
     echo "❌  Compile failed — check errors above"
   fi
 }
+
+flightdeck-flash() {
+  local BIN=$(find ~/Library/Caches/arduino/sketches -name "msfs_panel_v28.ino.bin" 2>/dev/null | head -1)
+  if [ -z "$BIN" ]; then
+    echo "❌ No .bin found. Compile first."
+    return 1
+  fi
+  local SIZE=$(du -h "$BIN" | cut -f1)
+  echo "🛫  FlightDeck OTA → 192.168.1.100 ($SIZE)"
+  echo ""
+  local MSGS=("Bribing the avionics..." "Teaching ESP32 new tricks..." "Overclocking the vibes..." "Defragging the flight deck..." "Almost there...")
+  local i=0
+  local SPIN=('⠋' '⠙' '⠹' '⠸' '⠼' '⠴' '⠦' '⠧' '⠇' '⠏')
+  python3 ~/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/tools/espota.py \
+    -i 192.168.1.100 -p 3232 -a flightdeck123 -f "$BIN" > /tmp/ota_out.txt 2>&1 &
+  local PID=$!
+  local frame=0
+  while kill -0 $PID 2>/dev/null; do
+    local spin="${SPIN[$((frame % 10))]}"
+    local msg="${MSGS[$((frame / 10 % 5))]}"
+    printf "\r  %s  %s  " "$spin" "$msg"
+    frame=$((frame + 1))
+    sleep 0.1
+  done
+  wait $PID
+  local EXIT=$?
+  printf "\r  ✅  Upload complete!                    \n"
+  echo ""
+  if [ $EXIT -eq 0 ]; then
+    echo "✅  Rebooting... panel back at http://192.168.1.100"
+  else
+    echo "❌  Upload failed:"
+    cat /tmp/ota_out.txt
+  fi
+}
 alias fd-compile="flightdeck-compile"
 alias fd-upload="fd-compile && fd-flash"
-alias fd-compile="arduino-cli compile --fqbn esp32:esp32:esp32s3 --build-property 'build.usbmode=OTG' --clean ~/Downloads/msfs_panel_v28 2>&1"
