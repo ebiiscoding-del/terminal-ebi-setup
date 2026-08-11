@@ -925,3 +925,38 @@ flightdeck-flash() {
 }
 alias fd-compile="flightdeck-compile"
 alias fd-upload="fd-compile && fd-flash"
+
+flightdeck-flash() {
+  local BIN=$(find ~/Library/Caches/arduino/sketches -name "msfs_panel_v28.ino.bin" -print0 | xargs -0 ls -t 2>/dev/null | head -1)
+  if [ -z "$BIN" ]; then
+    echo "❌ No .bin found. Compile first."
+    return 1
+  fi
+  local AGE=$(( $(date +%s) - $(stat -f %m "$BIN") ))
+  echo "🛫  FlightDeck OTA → 192.168.1.100"
+  echo "📦  Binary: $BIN"
+  echo "🕐  Compiled ${AGE}s ago"
+  if [ $AGE -gt 300 ]; then
+    echo "⚠️   Warning: bin is over 5 minutes old — did compile actually run?"
+  fi
+  local MSGS=("Bribing the avionics..." "Teaching ESP32 new tricks..." "Overclocking the vibes..." "Defragging the flight deck..." "Almost there, don't touch anything...")
+  python3 ~/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/tools/espota.py \
+    -i 192.168.1.100 -p 3232 -a flightdeck123 -f "$BIN" 2>&1 | {
+    local dots=0 idx=0
+    while IFS= read -r line; do
+      for ((i=0; i<${#line}; i++)); do
+        [[ "${line:$i:1}" != "." ]] && continue
+        dots=$((dots+1))
+        local pct=$((dots*100/550)); [[ $pct -gt 99 ]] && pct=99
+        local f=$((pct/5)) bar=""
+        for ((j=0;j<f;j++)); do bar+="█"; done
+        for ((j=f;j<20;j++)); do bar+="░"; done
+        (( dots % 80 == 0 )) && idx=$(( (idx+1) % 5 ))
+        printf "\r  [%s] %3d%%  %s  " "$bar" "$pct" "${MSGS[$idx]}"
+      done
+    done
+    printf "\r  [████████████████████] 100%%  Done!                    \n"
+  }
+  echo "✅  Rebooting... panel back at http://192.168.1.100"
+}
+alias fd-flash="flightdeck-flash"
